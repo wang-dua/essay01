@@ -1,0 +1,261 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{ctex}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\usepackage{balance}
+\usepackage{multirow}
+\begin{document}
+\title{VEC中基于DRL的服务多分类缓存与计算卸载方案}
+\author{author
+\thanks{ thanks
+
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~18, No.~9, September~2020}%
+{VEC中基于DRL的服务多分类缓存与计算卸载方案}
+
+\maketitle
+
+  
+
+\section{System model}
+\subsection{System Overview}
+考虑一个三层的VEC网络模型, 物理层包括配备有MEC服务器的路边单元RSU, 任务车辆以及云服务器.
+
+系统中包含$L$个任务车辆, $N$个RSU, 一个云服务中心, 任务车辆表示为$ \mathcal{V}=\{ 1,2,\dots,l,\dots,L \} $, 配备MEC服务器的RSU为$ \mathcal{R} = \{ 1,2,\dots,n,\dots,N \} $, $ \mathcal{AP}=\{\mathcal{C}\cup\mathcal{R}\}=\{1,2,\dots,i,\dots,I\} $, 车辆和路边单元RSU具备有限的计算资源和缓存空间, 云服务中心有无限大的计算资源和缓存空间, 系统中的时间划分为$ \mathcal{T}=\{1,2,\dots,t,\dots,T\} $, 每个时隙都有相同的时值$ \Delta t $, 每个车辆在每个时隙开始时刻生成一个任务.
+
+假设互联网存在$ K $类与计算型的任务相对应的缓存执行文件, 当任务所需的一类或多类执行文件在节点(也就是车辆或路边单元RSU)上进行了预缓存时, 该任务才能在车辆本地或者卸载到路边单元上进行处理, 文件类型共有$ K $种, 由$ \mathcal{F} = \{ 1,2,\dots,k,\dots,K \} $表示, 假设每种文件类型大小固定为$ \theta $, 且云中存储了所有类型的执行文件.
+
+任务车辆在时刻$t$开始生成的任务请求可以表示为$ T_{l}(t)=\{ d_{l}(t), \boldsymbol{f}_l(t),D_{l}(t)  \} $, 其中,$d_{l}(t)$是任务输入数据, $ \boldsymbol{f}_{l}(t)=\{ f_1(t),f_2(t),\dots, f_k(t), \dots,f_K(t) \} $是任务请求所需资源类型的向量表示, $ f_k(t) \in \{  0,1\} $是任务所需$ k $类文件的二元变量, 即$ T_{l}(t) $需要依赖多个类型的文件才能进行处理,  例如当$ K=3 $, 也就是共有三类缓存执行文件, $ \boldsymbol{f}_{l}(t)=\{ 1,0, 1 \} $表示任务$  T_{l}(t) $只需要第一类和第三类文件, $ D_{l}(t) $是任务最大容忍时延
+
+车辆$ V_l $和路边单元RSU$ R_n $的总存储资源分别为$ S_l $, $ S_n $
+
+%系统中的频谱分为$ I $个独立的信道, 由$ \mathcal{I}=\{ 1,2,\dots,I \} $表示, 假设信道正交频分多路复用, 并且带宽相同都为$ B $, 总带宽为$ W $.
+
+由于任务车辆本身具备存储功能, 由车辆$ V_l $生成的任务可以选择本地处理, 卸载到路边单元$ R_n $或者云服务器中, 而路边单元具有有限的计算和缓存资源, 所以我们选择一个跳数的协同单元$ R_{n^{\prime}} $作为对等卸载节点, 这样可以减轻路边单元计算负载.
+\subsection{Communication Model}
+为了描述实际的车辆移动环境, 考虑行驶速度在$\mu_{\min}$到$\mu_{\max}$之间的车辆, 并假设边缘节点知道属于其覆盖区域的所有车辆, 上行链路为多信道模型, 每个边缘节点的总体带宽均为$ B $, 注意不同边缘节点分配的频谱是相同的, 并且分配的信道都是正交的, 因此在同一边缘节点的覆盖区域内干扰可以忽略不计
+
+在该研究中主要考虑的是服务缓存对应的卸载问题, 所以我们着重考虑任务车辆中用户的服务质量, 忽略车辆和路边单元的缓存时延, 假设在每个时隙每个车辆只能发送一个任务, 路边单元在每个时隙接收到的任务总数为$ q_n(t) $,  车辆$ V_l $与路边单元之$ R_n $间的信噪比为
+\begin{equation}
+	\gamma_{l,n}(t) =\frac{p_{l,n}(t)g_{l,n}(t)}{\sum_{n=1}^{N}g_{l,n}(t)\sum_{i=1}^{q_n(t)}p_{l,n}(t) + \sigma ^2}
+	\label{SINR} 
+\end{equation}
+基于香农定理, 车辆$ V_l $与路边单元之$ R_n $间的数据传输率为
+\begin{equation}
+	r_{l,n}(t) = B_{l,n}(t)\log_2( 1+\gamma_{l,n}(t) )
+	\label{transmission rate}
+\end{equation}
+其中$ \sigma^2 $是高斯白噪声方差, $ g_{l,n}(t) $是平均信道增益, $ p_{l,n}(t) $表示路边单元的平均信道传输功率, $ B_{l,n}(t) $是分配给任务车辆的带宽, $ B_{l,n}(t) =B/q_n(t)  $
+
+
+
+
+
+%选用$ a_{l,i}(t) \in \{ 0,1 \} $作为子信道选择的二元变量, 当$ a_{l,i}(t)=1 $, 表示车辆$ V_l $传输任务选用信道$ i $,  车辆$ V_l $在子信道$ i $传输任务的数据传输率可以表示为
+%	\begin{equation}
+%		r_{l,i}(t) = a_{l,i}(t)B\log_2\left( 1+\frac{p_{l,i}(t)g_{l,i}(t)}{\sigma ^2} \right) 
+%	\end{equation}
+%其中, $ p_{l,i}(t) $是$ V_l $使用信道$ i $的平均传输传输功率, $ g_{l,i}(t) $是信道增益, $ \sigma ^2 $是噪声功率
+%
+%为了有效地避免信道的干扰, 假设在一个时隙内, 一个子信道只能分配给一个车辆使用, 也就是$ \sum_{i=1}^{L}{a_{l,i}(t)}=1 $, 同时一个车辆可以使用多个子信道进行数据的传输, 所以车辆$ V_l $的总数据传输率为
+%	\begin{equation}
+%		r_{l}(t) = \sum_{i=1}^{I}{a_{l,i}(t)B\log_2\left( 1+\frac{p_{l,i}(t)g_{l,i}(t)}{\sigma ^2} \right) }
+%		\label{transimission rate}
+%	\end{equation}
+
+
+
+
+
+
+\subsection{Service Caching Mechanism}
+在每个时隙开始, 任务车辆生成新的任务$T_{l}(t)=\{d_{l}(t), \boldsymbol{f}_{l}(t),D_{l}(t)\}$, 并且在该时隙完成任务的卸载和计算, 在每个时隙结束前, 车辆和路边单元要对每一类执行文件做出缓存更新决策并更新文件在节点的缓存状态, 协同车辆和路边单元的缓存容量限制为
+\begin{equation}
+	\theta\sum^{K}_{k=1}{\phi_{l,k}(t)  } \le S_l
+	\label{cache constraint vehicle}
+\end{equation}
+和
+\begin{equation}
+		\theta \sum^{K}_{k=1}{\phi_{n,k}(t) } \le S_n
+		\label{cache constraint RSU}
+\end{equation}
+其中$ \theta $是每个执行文件的大小, 为固定的常量, $ \phi_{m,k}\in \{ 0,1 \} $和$ \phi_{n,k}\in \{ 0,1 \} $分别为第$ k $类执行文件在车辆$ V_l $和路边单元$ R_n $中的缓存状态, $ \phi_{l,k}=1,\phi_{n,k}=1  $分别表示为第$ k $类型文件在车辆$ V_l $或$ R_n $的缓存中, 否则不在缓存中 
+
+%车辆和路边单元对所有类型的缓存文件的缓存状态可以用向量表示为$ \boldsymbol{\phi}_{l}(t)=\{ \phi_{l,1}(t), \phi_{l,2}(t), \dots,\phi_{l,k}(t),\dots,\phi_{l,K}(t) \} $, $ \boldsymbol{\phi}_{n}(t)=\{ \phi_{n,1}(t), \phi_{n,2}(t), \dots,\phi_{n,k}(t),\dots,\phi_{n,K}(t) \} $
+
+在每个时隙结束前, 车辆$ V_l $和路边单元$ R_n $要更新对每类缓存文件的决策, 用$ \psi_{l,k}(t) \in \{ 0,1,-1 \} $和$ \psi_{n,k}(t) \in \{ 0,1,-1 \} $分别表示表示对第$ k $类文件的缓存更新策略, $ \psi_{l,k}(t)=0 $($ \psi_{l,k}(t)=0 $)表示文件缓存状态保持不变, $ \psi_{l,k}(t)=1 $($ \psi_{l,k}(t)=0 $)表示文件将被节点缓存, $ \psi_{l,k}(t)=-1 $($ \psi_{l,k}(t)=0 $)表示缓存文件将会被替换,缓存更新决策的限制为
+\begin{equation}
+	\psi_{i,k}(t) \geq - \phi_{i,k}(t), \forall i \in \mathcal{AP}
+	\label{cache update constraint}
+\end{equation}
+缓存状态的更新为
+\begin{equation}
+	\phi_{i,k}(t+1) = \phi_{i,k}(t)+\psi_{i,k}(t)
+	\label{cache update}
+\end{equation}
+更新完之后的缓存容量大小也要符合存储限制
+\begin{equation}
+		\theta\sum^{K}_{k=1}{ ( \phi_{i,k}(t)+\psi_{i,k}(t) ) } \le S_i, \forall i \in \mathcal{AP}
+		\label{after cache update, constraint}
+\end{equation}
+
+\subsection{Task Offloading Mechanism}
+在时隙开始时, 车辆生成任务请求, 该任务可以进行本地处理, 或者卸载到路边单元和协同路边单元或者是云服务器中, 且只能卸载到一个节点上, 任务车辆$ V_l$的卸载决策为$\boldsymbol{\omega}_{l}(t)=\{\omega_{local}(t),\omega_{l,n}(t),\omega_{l,n^{\prime}}(t),\omega_{l,0}(t) \} $, $ \omega(t)\in \{0,1\} $, 卸载决策限制为
+\begin{equation}
+	\omega_{local}(t)+\omega_{l,n}(t)+\omega_{l,n^{\prime}}(t)+\omega_{l,0}(t)=1
+	\label{offload decision constraint}
+\end{equation}
+其中$\omega_{local}(t)=1,\omega_{l,n}(t)=1,\omega_{l,n^{\prime}}(t)=1,\omega_{l,0}(t)=1 $分别表示任务在$ V_l $本地处理, 卸载到路边单元$ R_n $, 卸载到协同路边单元$ R_{n^{\prime}} $和卸载到云服务器, 任务卸载时代理会先检查任务所需文件在节点的缓存情况, 当车辆缓存命中时, 任务进行本地处理, 若车辆缓存未命中且路边单元缓存命中则卸载到路边单元, 若协同车辆未命中且路边单元缓存未命中且路边单元临近一跳的协同路边单元缓存命中则卸载到协同路边单元, 否则卸载到云服务器, 具体的卸载案例见表\ref{offload decision table}
+%由于现实中协同车辆也需要足够的计算资源处理车辆本身的计算任务, 所以用$ \rho_m(t)=\sum_{l=1}^{V}{f_{l,m}(t)} /F_m $表示协同车辆已分配计算资源占总资源的比例, $ f_{l,m}(t) $表示在时刻$ t $协同车辆分配给任务车辆的计算资源, 且设定资源占比阈值$ \rho_{th} $, 只有当协同车辆预先缓存了任务所需的文件且$ \rho_m(t) \le \rho_{th} $时, 任务才能卸载到协同车辆上进行处理, 这样可以防止过多任务上传到协同车辆从而导致车辆负载过高的问题,  
+%\begin{table}[]
+%	\caption{任务卸载决策}
+%	\label{offload decision table}
+%	\begin{tabular}{|c|cccc|}
+%		\hline
+%		\multirow{2}{*}{缓存命中情况} & \multicolumn{4}{c|}{卸载决策$\omega$} \\ \cline{2-5} 
+%		& \multicolumn{1}{c|}{$ C_m $} & \multicolumn{1}{c|}{$ R_n $} & \multicolumn{1}{c|}{$ R_{n,n^{'}} $} & Cloud \\ \hline
+%		协同车辆缓存且计算资源低于阈值 & \multicolumn{1}{c|}{1} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & 0 \\ \hline
+%		\begin{tabular}[c]{@{}c@{}}(协同车辆无缓存或计算资源高于阈值)\\ 且单元有缓存\end{tabular} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{1} & \multicolumn{1}{c|}{0} & 0 \\ \hline
+%		\begin{tabular}[c]{@{}c@{}}(协同车辆无缓存或计算资源高于阈值)\\ 且单元无缓存且协同单元有缓存\end{tabular} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{1} & 0 \\ \hline
+%		\begin{tabular}[c]{@{}c@{}}(协同车辆无缓存或计算资源高于阈值)\\ 且单元无缓存且协同单元无缓存\end{tabular} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & 1 \\ \hline
+%	\end{tabular}
+%\end{table}
+
+\begin{table}[]
+	\caption{任务卸载决策}
+	\label{offload decision table}
+	\begin{tabular}{|c|cccc|}
+		\hline
+		\multirow{2}{*}{$ \phi(t) $} & \multicolumn{4}{c|}{卸载决策$\omega(t)$} \\ \cline{2-5} 
+		& \multicolumn{1}{c|}{$ local $} & \multicolumn{1}{c|}{$ R_n $} & \multicolumn{1}{c|}{$ R_{n^{\prime}} $} & Cloud \\ \hline
+		车辆缓存命中  & \multicolumn{1}{c|}{1} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & 0 \\ \hline
+		\begin{tabular}[c]{@{}c@{}} 车辆缓存未命中\\且路边单元缓存命中 \end{tabular} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{1} & \multicolumn{1}{c|}{0} & 0 \\ \hline
+		\begin{tabular}[c]{@{}c@{}}车辆缓存未命中\\且路边单元缓存未命中\\且协同路边单元缓存命中\end{tabular} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{1} & 0 \\ \hline
+		\begin{tabular}[c]{@{}c@{}}车辆缓存未命中\\且路边单元缓存未命中\\且协同路边单元缓存未命中\end{tabular} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & \multicolumn{1}{c|}{0} & 1 \\ \hline
+	\end{tabular}
+\end{table}
+
+\subsection{Computation Delay and Energy Consumption}
+当车辆处于路边单元的覆盖范围内时, 代理会根据缓存文件的缓存状态为任务选择卸载节点, 根据卸载决策可以计算出在不同的决策下相应的计算时延和传输时延.
+
+任务进行本地处理的时延为
+\begin{equation}
+	D_{local}(t) =  \frac{\lambda d_{l}(t)}{f_V}
+	\label{l,m,delay}
+\end{equation}
+其中, $ f_V $是车辆cpu频率, $ \lambda $是计算1bit任务数据需要的cpu周期, 当任务选择卸载到路边单元$ R_n $时, 时延为
+\begin{equation}
+	D_{l,n}(t) = \frac{d_{l}(t)}{r_{l,n}(t)} + \frac{\lambda d_{l}(t)}{f_R}
+	\label{l,n,delay}
+\end{equation}
+其中, $ f_R $是路边单元的cpu频率, 当任务选择卸载到协同路边单元$ R_{n^{\prime}} $时, 由于无线通信时延远大于路边单元的协同传输, 所以需要先将任务上传到路边单元再进行路边单元之间任务的传输, 卸载到协同路边单元的时延为
+\begin{equation}
+	D_{l,n^{\prime}}(t) = D_{l,n}(t)+\frac{d_l(t)}{r_{n,n^{\prime}}}
+	\label{l,nprime,delay}
+\end{equation}
+其中, $ r_{n,n^{\prime}} $为路边单元之间的数据传输速率, 任务选择卸载到云服务器的时延为
+\begin{equation}
+		D_{l,0}(t) = \frac{d_{l}(t)}{r_{Cloud}}
+		\label{l,0,delay}
+\end{equation}
+$ r_{Cloud} $为任务卸载到云服务器的数据传输速率, 由于云服务器有强大的计算资源, 这里忽略云服务器的计算时延, 并且计算任务的输出远小于数据的输入, 所以计算时延时忽略任务输出的返回时延, 考虑不同缓存和卸载决策下的传输延迟和计算延迟, 车辆$ V_l $在时刻$ t $生成任务卸载处理的总延迟为
+\begin{equation}
+	\begin{aligned}
+		D_{l,total}(t) & = \omega_{local}(t)D_{local}(t) +\omega_{l,n}(t)D_{l,n}(t) \\   
+		& +\omega_{l,n^{\prime}}(t)D_{l,n^{\prime}}(t) +\omega_{l,0}(t)D_{l,0}(t)
+	\end{aligned}
+\end{equation}
+定义$ t $时刻任务的平均处理延迟为
+\begin{equation}
+		D_{ave}(t) = \frac{1}{N} \sum_{n=1}^{N} \frac{1}{q_n(t)} \sum_{i=1}^{q_n(t)} D_{l,total}(t)
+\end{equation}
+
+\subsection{Problem Formulation}
+随着交互式服务的兴起, 用户体验对用户的黏性至关重要, 黏性是这些服务成功的关键, 作为用户体验的重要方面, 任务处理时延逐渐成为衡量无线网络性能的重要指标, 设计一种联合计算卸载和服务缓存方案, 以最小化长期累计平均任务处理时间为目标
+
+在时隙$ t $, 系统的决策包括时隙开始时任务车辆的卸载决策和边缘节点对某类执行文件的缓存决策, 以及时隙结束前边缘节点内某类型文件的缓存更新决策, 可以表示为$ \boldsymbol{Z}(t)=\{ \boldsymbol{\omega}(t) ,\boldsymbol{\phi}(t), \boldsymbol{\psi}(t) \}  $, $ \boldsymbol{\omega}(t) $是车辆的卸载决策, $ \boldsymbol{\omega}(t)=\{ \boldsymbol{\omega}_{1}(t), \boldsymbol{\omega}_{2}(t),\dots, \boldsymbol{\omega}_l(t),\dots ,\boldsymbol{\omega}_{L}(t) \} $, $ \boldsymbol{\omega}_l(t)=\{ \omega_{local}(t),\omega_{l,n}(t),\omega_{l,n^{\prime}}(t),\omega_{l,0}(t) \} $ , $\boldsymbol{\phi}_l(t)$, $ \boldsymbol{\phi}_n(t) $分别是时隙开始时车辆和路边单元中每一类执行文件的缓存状态, $ \boldsymbol{\phi}_l(t)=\{ \boldsymbol{\phi}_1(t), \boldsymbol{\phi}_2(t),\dots,\boldsymbol{\phi}_l(t) , \dots, \boldsymbol{\phi}_L(t) \} $, 每个$ \boldsymbol{\phi}_l(t) $又可以表示为$  \boldsymbol{\phi}_l(t)=\{ \phi_{l,1}(t), \phi_{l,2}(t),\dots,\phi_{l,k}(t),\dots,\phi_{l,K}(t) \}  $,
+$ \boldsymbol{\psi}_l(t) $和$ \boldsymbol{\psi}_n(t) $分别是时隙结束前车辆和路边单元对每一类执行文件的缓存更新策略, $ \boldsymbol{\psi}_l(t)=\{ \boldsymbol{\psi}_1(t), \boldsymbol{\psi}_2(t), \dots,\boldsymbol{\psi}_l(t) ,\dots,\boldsymbol{\psi}_L(t) \} $, 每个$ \boldsymbol{\psi}_l(t) $又可以表示为$  \boldsymbol{\psi}_l(t)=\{ \psi_{l,1}(t), \psi_{l,2}(t),\dots,\psi_{l,k}(t),\dots,\psi_{L,K}(t) \}  $
+
+具体地, 优化问题可以描述为：
+\begin{align}
+	&\min_{\boldsymbol{Z}(t)} \quad \sum_{t=1}^{T}\alpha^{t-1}\frac{D_{ave}(t)}{D_{max}} \label{eq min}\\
+	&\text{s.t.}  \notag \\
+	& \omega_{l,i}(t) \in \{ 0,1 \}, \omega_{l,0}(t) \in \{0,1\}, \forall l\in \mathcal{V},\forall t\in \mathcal{T} \notag \\
+	&\forall i \in \{\mathcal{AP}\}  \tag{\ref{eq min}a} \label{offload decision a} \\
+	&\omega_{local}(t)+\omega_{l,n}(t)+\omega_{l,n^{\prime}}(t)+\omega_{l,0}(t)=1, \notag \\
+	& \forall n,n^\prime\in \mathcal{R}, \forall l,t  \tag{\ref{eq min}b} \label{offload decision sum b} \\
+	& \phi_{i,k}(t)\in \{0,1\}, \forall k\in \mathcal{F}, \forall i,t \label{cache decision c} \tag{\ref{eq min}c} \\
+	& \psi_{i,k}(t) \in \{0,1\} , \forall i,k,t \label{cache update decision d} \tag{\ref{eq min}d} \\
+	& \psi_{i,k}(t) \geq -\phi_{i,k}(t), \forall i,k,t \label{cache decision geq update decision e} \tag{\ref{eq min}e} \\
+	& \phi_{i,k}(t+1)=\phi_{i,k}(t)+\psi_{i,k}(t), \forall i,k,t \label{get cache decision f } \tag{\ref{eq min}f} \\
+	& \theta \sum_{k=1}^{K}{( \phi_{i,k}(t)+\psi_{i,k}(t) )} \leq S_i, \forall i,k,t \label{storage constraint g} \tag{\ref{eq min}g} \\
+	& 0\le \alpha \le 1 \label{discount factor h} \tag{\ref{eq min}h} \\
+	& D_{l,total}(t) \le D_l(t),\forall l,t \label{task delay constraint i} \tag{\ref{eq min}i}
+\end{align}
+
+其中$ 0 \ge \alpha \le 1 $是折扣因子, 用于反映未来收益或成本的时间价值, $ D_{max} = \max\{D_{l,total}(t)\} $, 该问题是一个长期MINLP问题和NP-hard问题, 解决该优化问题的关键是在每个时隙对任务卸载和服务缓存做出合适的决策, 此外, 车辆参与状态的不断变化和短暂的交互也增加了边缘管理控制器的操作复杂度, 随着车辆数量和边缘节点的增加, 系统状态空间变大, 因此, 我们需要找到一种有效的方法来解决这些问题
+
+%在优化问题中乘以一个优化因子，比如 \(\lambda^{(t-1)}\) 次方，通常是为了引入某种权重机制，以便更好地反映优化目标的实际需求。这种权重机制可以有多个用途，以下是几个常见的原因和场景：
+
+%### 1. **时间折现因子**
+%
+%在许多优化问题中，特别是涉及到长期决策的情况，未来的效益或成本通常需要折现到当前时刻。折现因子 \(\lambda\) (0 < \(\lambda\) < 1) 用于反映未来收益或成本的时间价值，\(\lambda^{(t-1)}\) 表示第 \(t\) 个时刻的折现值。这种方法在强化学习和控制理论中尤为常见，用来平衡立即奖励和未来奖励。
+
+%```math
+%\text{优化目标} = \sum_{t=1}^T \lambda^{(t-1)} \cdot \text{时延}(t)
+%```
+
+\section{DEEP REINFORCEMENT LEARNING FOR EDGE CACHING AND OFFLOADING}
+\subsection{Problem Formulation Based on DRL}
+\begin{enumerate}
+	\item State space: 任意时刻开始时, 系统状态应该包括以下部分
+	\begin{itemize}
+		\item $ T_l(t) $: 车辆$ V_l $在$ t $时刻生成的任务请求, 可以用三元组表示为$ T_{l}(t)=\{ d_{l}(t), \boldsymbol{f}_l(t),D_{l}(t)  \} $
+		\item $ q_n(t) $: 边缘节点$ R_n $在$ t $时刻接收到的任务数量
+		\item $ \phi_{l,k}(t) $: $ t $时刻车辆$ V_l $本地的执行文件缓存状态
+		\item $ \phi_{n,k}(t) $: $ t $时刻边缘节点$ R_n $的执行文件缓存状态
+		\item $ B_{l,n}(t) $: $ t $时刻边缘节点$ R_n $分配给车辆$ V_l $的带宽
+		\item $ \gamma_{l,n}(t) $: $ t $时刻边缘节点无线通信的接收信噪比
+	\end{itemize}
+$ t $时刻的系统状态定义为
+	\begin{equation}
+		\boldsymbol{\mathrm{S}}(t) = \{ \boldsymbol{T}(t),\boldsymbol{q}(t),\boldsymbol{\phi}_V(t),\boldsymbol{\phi}_R(t),\boldsymbol{\gamma}(t), \boldsymbol{B}(t) \}
+		\label{system state}
+	\end{equation}
+	
+	
+	\item Acation space: 系统代理在$ t $开始要做出卸载决策, 时隙结束前要对节点的执行文件缓存做出缓存更新决策
+	\begin{itemize}
+		\item $ \omega_l(t) $: $ t $时刻车辆$ V_l $的更新决策
+		\item $ \psi_{l,k}(t) $: $ t $时刻车辆$ V_l $对$k$类执行文件的缓存更新决策
+		\item $ \psi_{n,k}(t) $: $ t $时刻边缘节点$ R_n $对$k$类执行文件的缓存更新决策
+	\end{itemize}
+$ t $时刻的系统行动决策定义为	
+	\begin{equation}
+		\boldsymbol{\mathrm{A}}(t)=\{ \boldsymbol{\omega}(t), \boldsymbol{\psi}_V(t), \boldsymbol{\psi}_R(t) \}
+		\label{system decision}
+	\end{equation}
+	\item Reward: 强化学习主要用于使奖励值最大化, 本文优化的车辆处理任务的平均延迟, 换句话说, 奖励函数应与目标函数相对应, 奖励函数定义为
+	\begin{equation}
+		r(t) = R( \boldsymbol{\mathrm{S}}(t),\boldsymbol{\mathrm{ A}}(t) )=-\frac{D_{ave}(t)}{D_{max}}
+	\end{equation}
+\end{enumerate}
+
+
+
+
+
+
+
+\end{document}
+
+
